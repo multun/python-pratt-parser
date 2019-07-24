@@ -1,3 +1,4 @@
+import re
 from operator import mul, add, sub, ifloordiv, pow
 
 
@@ -43,13 +44,13 @@ class Node():
 
 
 class CallNode():
-    def __init__(self, func, args):
-        self.func = func
+    def __init__(self, func_name, args):
+        self.func_name = func_name
         self.args = args
 
     def __repr__(self):
         args_repr = ', '.join(repr(arg) for arg in self.args)
-        return f"{operator_name(self.func)}({args_repr})"
+        return f"{self.func_name}({args_repr})"
 
 
 def infix(func):
@@ -98,7 +99,11 @@ class Num(Token):
 
 
 class ConstToken(Token):
-    pass
+    tok_map = {}
+    @classmethod
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        cls.tok_map[cls.value] = cls
 
 
 class RParen(ConstToken):
@@ -191,9 +196,31 @@ class Parser():
         return left
 
 
-tokens = [LParen(), ID("a"), LParen(), RParen(), Plus(), Num(2), RParen(),
-          Mult(), Num(3), Exp(), Num(4), Exp(), Num(5), EOF()]
-print(tokens)
+TOKEN_SPLITTER = re.compile(r" |(\w+|\(|\))")
+
+
+def tokenize(line):
+    for token in re.split(TOKEN_SPLITTER, line):
+        if token is not None:
+            token = token.strip()
+
+        if not token:
+            continue
+
+        const_tok_cls = ConstToken.tok_map.get(token, None)
+        if const_tok_cls is not None:
+            yield const_tok_cls()
+        elif token.isdigit():
+            yield Num(int(token))
+        elif token.isalpha():
+            yield ID(token)
+        else:
+            raise ValueError(f"unrecognised token: {token}")
+    yield EOF()
+
+
+tokens = list(tokenize("(a() + 2) * 3 ^ 4 ^ 5"))
+
 
 # tokens = [ID("a"), Plus(), Num(2), EOF()]
 # print(tokens)
