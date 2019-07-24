@@ -1,4 +1,7 @@
+#!/usr/bin/env python3
+
 import re
+import sys
 from operator import mul, add, sub, ifloordiv, pow
 
 
@@ -219,11 +222,14 @@ def tokenize(line):
     yield EOF()
 
 
-tokens = list(tokenize("(a() + 2) * 3 ^ 4 ^ 5"))
+if len(sys.argv) < 2:
+    print(f"Usage: {sys.argv[0]} \"math expression\"", file=sys.stderr)
+    print(f"Example expression: (a() + 2) * 3 ^ 4 ^ 5", file=sys.stderr)
+    exit(1)
 
+tokens = list(tokenize(sys.argv[1]))
+print("got the following tokens:", tokens)
 
-# tokens = [ID("a"), Plus(), Num(2), EOF()]
-# print(tokens)
 lexer = Lexer(tokens)
 
 print(Parser().parse())
